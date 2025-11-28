@@ -1,0 +1,56 @@
+# Secrets (NEVER UPLOAD THESE)
+.env
+secret.key
+
+# Heavy Data
+data/
+db_data/
+*.sqlite3
+media/
+staticfiles/
+tmp/
+
+# Compiling junk
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Python tooling
+venv/
+.venv/
+.python-version
+*.egg-info
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+coverage/
+coverage.xml
+celerybeat-schedule
+local_settings.py
+
+# Node tooling
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/.cache/
+frontend/.parcel-cache/
+
+# Editors & OS
+.vscode/
+.idea/
+.history/
+*.swp
+*.swo
+*.orig
+Thumbs.db
+
+# Docker/compose artifacts
+docker-compose.override.yml
+*.pid
+*.sock
+certs/

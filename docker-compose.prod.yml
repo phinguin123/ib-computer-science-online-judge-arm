@@ -1,0 +1,91 @@
+services:
+
+  # ----------------------------------------
+  # 1. REDIS
+  # ----------------------------------------
+  oj-redis:
+    image: redis:6.0-alpine
+    restart: always
+    command:
+      - redis-server
+      - "--appendonly"
+      - "yes"
+      - "--requirepass"
+      - "${REDIS_PASSWORD}"  # Reads from .env
+    volumes:
+      - ./data/redis:/data
+
+  # ----------------------------------------
+  # 2. DATABASE (Postgres)
+  # ----------------------------------------
+  oj-postgres:
+    image: postgres:13-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=onlinejudge
+      - POSTGRES_USER=onlinejudge
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # Reads from .env
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  # ----------------------------------------
+  # 3. BACKEND (Django API)
+  # ----------------------------------------
+  oj-backend:
+    image: grow20/onlinejudge-backend:latest
+    restart: always
+    depends_on:
+      - oj-redis
+      - oj-postgres
+      - oj-judge-server
+    volumes:
+      - ./data/backend:/data
+    environment:
+      - POSTGRES_DB=onlinejudge
+      - POSTGRES_USER=onlinejudge
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=oj-postgres
+      - REDIS_HOST=oj-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      # We construct the URL dynamically using the variable
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@oj-redis:6379
+      - JUDGE_SERVER_TOKEN=${JUDGE_TOKEN}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - FORCE_HTTPS=1
+    # Note: We do NOT expose port 80 here anymore.
+    # The Frontend (Nginx) will talk to this container internally on port 8000.
+    expose:
+      - "8000"
+
+  # ----------------------------------------
+  # 4. FRONTEND (Vue + Nginx)
+  # ----------------------------------------
+  # This service was missing in your dev file but is required for prod
+  oj-frontend:
+    image: grow20/onlinejudge-frontend:latest
+    restart: always
+    depends_on:
+      - oj-backend
+    ports:
+      - "80:80"
+      - "443:443"
+
+  # ----------------------------------------
+  # 5. JUDGE SERVER
+  # ----------------------------------------
+  oj-judge-server:
+    image: grow20/onlinejudge-judge:latest
+    restart: always
+    privileged: true
+    volumes:
+      - ./data/judge_server:/data
+      # CRITICAL: This syncs the test cases from Backend to Judge
+      - ./data/backend/test_case:/test_case:ro
+    environment:
+      - SERVICE_URL=http://oj-judge-server:8080
+      - BACKEND_URL=http://oj-backend:8000/api/judge_server_heartbeat/
+      - TOKEN=${JUDGE_TOKEN}
+      - cpu_core=2
+    ports:
+      - "8080:8080"

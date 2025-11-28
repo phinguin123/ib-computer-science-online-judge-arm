@@ -1,0 +1,15 @@
+# Ignore the data directory (DB files, test cases)
+data/
+
+# Ignore git history (saves space)
+.git/
+
+# Ignore local environments
+__pycache__/
+*.pyc
+.env
+venv/
+
+# Ignore node_modules (we install them fresh inside Docker)
+node_modules/
+frontend/node_modules/

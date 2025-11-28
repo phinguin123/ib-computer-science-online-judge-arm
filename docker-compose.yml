@@ -1,0 +1,75 @@
+services:
+  # ARM64: redis:6.0-alpine is multi-arch and supports ARM64
+  oj-redis:
+    image: redis:6.0-alpine
+    restart: always
+    environment:
+      REDIS_PASSWORD: *redis_password
+    command:
+      - redis-server
+      - "--appendonly"
+      - "yes"
+      - "--requirepass"
+      - "${REDIS_PASSWORD}"
+    volumes:
+      - ./data/redis:/data
+
+  # ARM64: postgres:13-alpine is multi-arch and supports ARM64
+  oj-postgres:
+    image: postgres:13-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: onlinejudge
+      POSTGRES_USER: onlinejudge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+  
+  oj-backend:
+    build:
+      context: . 
+      dockerfile: backend/Dockerfile
+    restart: always
+    depends_on:
+      - oj-redis
+      - oj-postgres
+      - oj-judge-server
+    volumes:
+      - ./data/backend:/data
+      # FIX: Don't mount entire backend directory as it overrides the built /app/dist
+      # For development, you can uncomment the line below, but dist won't be available
+      # - ./backend:/app
+    environment:
+      POSTGRES_DB: onlinejudge
+      POSTGRES_USER: onlinejudge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: oj-postgres
+      REDIS_HOST: oj-redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@oj-redis:6379
+      JUDGE_SERVER_TOKEN: ${JUDGE_SERVER_TOKEN}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      FORCE_HTTPS: "1"
+    ports:
+      - "80:8000"  # Mapping port 80 directly since Nginx is inside
+      - "443:1443" # Mapping port 443 directly since Nginx is inside
+
+  oj-judge-server:
+    build:
+      context: ./judge-server
+      dockerfile: Dockerfile
+    restart: always
+    privileged: true # CRITICAL for ARM Seccomp
+    volumes:
+      - ./data/judge_server:/data
+      - ./data/backend/test_case:/test_case:ro
+    environment:
+      SERVICE_URL: http://oj-judge-server:8080
+      BACKEND_URL: http://oj-backend:8000/api/judge_server_heartbeat/
+      TOKEN: *judge_token
+      # Oracle Ampere A1 usually has 4 cores
+      # FIX: Changed from 4 to 2 because the A1 has only 2 cores
+      cpu_core: 2
+    ports:
+      - "8080:8080"

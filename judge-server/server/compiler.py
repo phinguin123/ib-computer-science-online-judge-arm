@@ -1,0 +1,64 @@
+import _judger
+import json
+import os
+
+from config import COMPILER_LOG_PATH, COMPILER_USER_UID, COMPILER_GROUP_GID
+from exception import CompileError
+from utils import logger
+import shlex
+
+
+class Compiler(object):
+    def compile(self, compile_config, src_path, output_dir):
+        command = compile_config["compile_command"]
+        exe_path = os.path.join(output_dir, compile_config["exe_name"])
+        command = command.format(src_path=src_path, exe_dir=output_dir, exe_path=exe_path)
+        compiler_out = os.path.join(output_dir, "compiler.out")
+        _command = shlex.split(command)
+
+        os.chdir(output_dir)
+        env = compile_config.get("env", [])
+        env.append("PATH=" + os.getenv("PATH"))
+        result = _judger.run(max_cpu_time=compile_config["max_cpu_time"],
+                             max_real_time=compile_config["max_real_time"],
+                             max_memory=compile_config["max_memory"],
+                             max_stack=128 * 1024 * 1024,
+                             max_output_size=20 * 1024 * 1024,
+                             max_process_number=_judger.UNLIMITED,
+                             exe_path=_command[0],
+                             # Use /dev/null for input since compiler doesn't read from stdin
+                             input_path="/dev/null",
+                             output_path=compiler_out,
+                             error_path=compiler_out,
+                             args=_command[1::],
+                             env=env,
+                             log_path=COMPILER_LOG_PATH,
+                             seccomp_rule_name=None,
+                             uid=COMPILER_USER_UID,
+                             gid=COMPILER_GROUP_GID)
+
+        if result["result"] != _judger.RESULT_SUCCESS:
+            error_message = None
+            if os.path.exists(compiler_out):
+                try:
+                    # Read compiler output with error handling for encoding issues
+                    # Use errors="replace" to handle any non-UTF-8 characters gracefully
+                    with open(compiler_out, encoding="utf-8", errors="replace") as f:
+                        error_message = f.read().strip()
+                    os.remove(compiler_out)
+                    if error_message:
+                        logger.info(f"Compilation error captured: {error_message[:200]}")  # Log first 200 chars
+                        raise CompileError(error_message)
+                except (IOError, OSError) as e:
+                    # If file reading fails, log and continue to generic error
+                    logger.warning(f"Failed to read compiler output: {e}")
+                    if os.path.exists(compiler_out):
+                        os.remove(compiler_out)
+            # If no error message was captured, create a detailed error
+            if not error_message:
+                error_message = f"Compiler runtime error (result code: {result.get('result', 'unknown')}), info: {json.dumps(result)}"
+                logger.error(f"Compilation failed without error output: {result}")
+            raise CompileError(error_message)
+        else:
+            os.remove(compiler_out)
+            return exe_path
