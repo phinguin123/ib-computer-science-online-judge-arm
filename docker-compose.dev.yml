@@ -1,10 +1,11 @@
 # ============================================
-# Production/Staging Docker Compose
+# Development Docker Compose
 # ============================================
-# This file is for Production/Staging environments.
-# It pulls pre-built images from Docker Hub.
-# Runs on standard web ports (80/443).
-# Uses named volumes to avoid conflicts with dev environment.
+# This file is for active development.
+# It builds from local source code.
+# Runs on custom ports (8000/8088) to avoid conflicts with Staging.
+# Mounts local volumes for hot-reloading.
+# Uses separate named volumes for databases to avoid data conflicts.
 
 services:
   # ----------------------------------------
@@ -20,9 +21,9 @@ services:
       - "--requirepass"
       - "${REDIS_PASSWORD}"
     volumes:
-      - prod_redis_data:/data
+      - dev_redis_data:/data
     networks:
-      - oj-network
+      - oj-dev-network
 
   # ----------------------------------------
   # 2. DATABASE (Postgres)
@@ -35,15 +36,17 @@ services:
       - POSTGRES_USER=onlinejudge
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - prod_postgres_data:/var/lib/postgresql/data
+      - dev_postgres_data:/var/lib/postgresql/data
     networks:
-      - oj-network
+      - oj-dev-network
 
   # ----------------------------------------
   # 3. BACKEND (Django API)
   # ----------------------------------------
   oj-backend:
-    image: grow20/onlinejudge-backend:latest
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: always
     depends_on:
       - oj-redis
@@ -51,6 +54,10 @@ services:
       - oj-judge-server
     volumes:
       - ./data/backend:/data
+      # Mount backend source for hot-reloading
+      # Note: This overrides /app, so dist won't be available
+      # For frontend changes, rebuild or use the frontend dev service
+      - ./backend:/app
     environment:
       - POSTGRES_DB=onlinejudge
       - POSTGRES_USER=onlinejudge
@@ -62,31 +69,49 @@ services:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@oj-redis:6379
       - JUDGE_SERVER_TOKEN=${JUDGE_SERVER_TOKEN}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - FORCE_HTTPS=1
-    expose:
-      - "8000"
+      - FORCE_HTTPS=0
+      - OJ_ENV=development
+    ports:
+      - "8000:8000"
     networks:
-      - oj-network
+      - oj-dev-network
 
   # ----------------------------------------
-  # 4. FRONTEND (Vue + Nginx)
+  # 4. FRONTEND (Vue.js with Hot-Reloading)
   # ----------------------------------------
+  # This service runs the Vue.js dev server for hot-reloading
+  # It proxies API requests to the backend container
+  # Note: The dev server runs on port 8088 (mapped from container's 8080)
   oj-frontend:
-    image: grow20/onlinejudge-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     restart: always
     depends_on:
       - oj-backend
+    volumes:
+      # Mount frontend source for hot-reloading
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - TARGET=http://oj-backend:8000
+      - PORT=8080
+      - NODE_ENV=development
     ports:
-      - "80:80"
-      - "443:443"
+      - "8088:8080"
     networks:
-      - oj-network
+      - oj-dev-network
+    # Use command to run dev server instead of production build
+    # Build DLL first (only needed once, but safe to run each time)
+    command: sh -c "npm install && npm run build:dll && npm run dev"
 
   # ----------------------------------------
   # 5. JUDGE SERVER
   # ----------------------------------------
   oj-judge-server:
-    image: grow20/onlinejudge-judge:latest
+    build:
+      context: ./judge-server
+      dockerfile: Dockerfile
     restart: always
     privileged: true
     volumes:
@@ -98,23 +123,24 @@ services:
       - TOKEN=${JUDGE_SERVER_TOKEN}
       - cpu_core=2
     ports:
-      - "8080:8080"
+      - "8081:8080"
     networks:
-      - oj-network
+      - oj-dev-network
 
 # ----------------------------------------
-# Named Volumes (Production/Staging)
+# Named Volumes (Development)
 # ----------------------------------------
-# These named volumes ensure data isolation from dev environment
+# These named volumes ensure data isolation from production/staging
 volumes:
-  prod_redis_data:
+  dev_redis_data:
     driver: local
-  prod_postgres_data:
+  dev_postgres_data:
     driver: local
 
 # ----------------------------------------
 # Networks
 # ----------------------------------------
 networks:
-  oj-network:
+  oj-dev-network:
     driver: bridge
+
