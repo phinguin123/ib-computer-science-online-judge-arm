@@ -54,3 +54,4 @@ docker-compose.override.yml
 *.pid
 *.sock
 certs/
+docker-compose.dev.yml
