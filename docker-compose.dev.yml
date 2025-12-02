@@ -45,8 +45,8 @@ services:
   # ----------------------------------------
   oj-backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     restart: always
     depends_on:
       - oj-redis
@@ -71,10 +71,12 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - FORCE_HTTPS=0
       - OJ_ENV=development
+      - DATA_DIR=/data
     ports:
       - "8000:8000"
     networks:
       - oj-dev-network
+    command: python3 manage.py runserver 0.0.0.0:8000
 
   # ----------------------------------------
   # 4. FRONTEND (Vue.js with Hot-Reloading)
@@ -98,6 +100,7 @@ services:
       - PORT=8080
       - NODE_ENV=development
     ports:
+      # ✅ Host 8088 -> Container 8080
       - "8088:8080"
     networks:
       - oj-dev-network
@@ -133,14 +136,10 @@ services:
 # These named volumes ensure data isolation from production/staging
 volumes:
   dev_redis_data:
-    driver: local
   dev_postgres_data:
-    driver: local
 
 # ----------------------------------------
 # Networks
 # ----------------------------------------
 networks:
   oj-dev-network:
-    driver: bridge
-

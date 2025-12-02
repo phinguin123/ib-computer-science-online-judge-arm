@@ -26,4 +26,5 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-DATA_DIR = f"{BASE_DIR}/data"
+# Use DATA_DIR from environment if set, otherwise default to /app/data
+DATA_DIR = os.environ.get('DATA_DIR', f"{BASE_DIR}/data")

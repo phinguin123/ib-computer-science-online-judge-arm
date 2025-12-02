@@ -81,6 +81,15 @@ services:
       - "443:443"
     networks:
       - oj-network
+    # ✅ THE FIX: This installs Nginx and patches the config at runtime
+    command: >
+      sh -c "
+      apt-get update -qq &&
+      apt-get install -y -qq nginx > /dev/null 2>&1 &&
+      useradd -r -s /bin/false nginx 2>/dev/null || true &&
+      sed -i 's|proxy_pass http://oj-backend:8080;|proxy_pass http://oj-backend:8000;|g' /app/deploy/nginx.conf &&
+      nginx -c /app/deploy/nginx.conf -g 'daemon off;'
+      "
 
   # ----------------------------------------
   # 5. JUDGE SERVER
@@ -108,13 +117,10 @@ services:
 # These named volumes ensure data isolation from dev environment
 volumes:
   prod_redis_data:
-    driver: local
   prod_postgres_data:
-    driver: local
 
 # ----------------------------------------
 # Networks
 # ----------------------------------------
 networks:
   oj-network:
-    driver: bridge

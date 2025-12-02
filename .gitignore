@@ -1,5 +1,6 @@
 # Secrets (NEVER UPLOAD THESE)
 .env
+.env.*
 secret.key
 
 # Heavy Data
@@ -34,6 +35,7 @@ local_settings.py
 
 # Node tooling
 frontend/node_modules/
+frontend/dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -54,3 +56,6 @@ docker-compose.override.yml
 *.pid
 *.sock
 certs/
+
+# OS Junk
+.DS_Store
