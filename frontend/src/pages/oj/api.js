@@ -254,6 +254,15 @@ export default {
       params
     })
   },
+  getLeaderboard (offset, limit) {
+    let params = {
+      offset,
+      limit
+    }
+    return ajax('leaderboard', 'get', {
+      params
+    })
+  },
   getContestRank (params) {
     return ajax('contest_rank', 'get', {
       params
@@ -308,7 +317,12 @@ function ajax (url, method, options) {
     }, res => {
       // API request exception, usually Server error or network error
       reject(res)
-      Vue.prototype.$error(res.data.data)
+      // Handle cases where res.data might be undefined (network errors)
+      const errorMsg = (res && res.data && res.data.data) || 
+                       (res && res.data && res.data.error) || 
+                       (res && res.message) || 
+                       'Network error or server error'
+      Vue.prototype.$error(errorMsg)
     })
   })
 }

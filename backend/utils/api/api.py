@@ -52,12 +52,12 @@ class JSONResponse(object):
 
 class APIView(View):
     """
-    Django view的父类, 和django-rest-framework的用法基本一致
-     - request.data获取解析之后的json或者urlencoded数据, dict类型
-     - self.success, self.error和self.invalid_serializer可以根据业需求修改,
-        写到父类中是为了不同的人开发写法统一,不再使用自己的success/error格式
-     - self.response 返回一个django HttpResponse, 具体在self.response_class中实现
-     - parse请求的类需要定义在request_parser中, 目前只支持json和urlencoded的类型, 用来解析请求的数据
+    Django view base class, usage is basically the same as django-rest-framework
+     - request.data gets parsed json or urlencoded data, dict type
+     - self.success, self.error and self.invalid_serializer can be modified according to business needs,
+        written in the base class to unify the development style for different people, no longer using their own success/error format
+     - self.response returns a django HttpResponse, specifically implemented in self.response_class
+     - Classes that parse requests need to be defined in request_parser, currently only supports json and urlencoded types, used to parse request data
     """
     request_parsers = (JSONParser, URLEncodedParser)
     response_class = JSONResponse
@@ -112,9 +112,9 @@ class APIView(View):
 
     def paginate_data(self, request, query_set, object_serializer=None):
         """
-        :param request: django的request
-        :param query_set: django model的query set或者其他list like objects
-        :param object_serializer: 用来序列化query set, 如果为None, 则直接对query set切片
+        :param request: django request
+        :param query_set: django model query set or other list-like objects
+        :param object_serializer: used to serialize query set, if None, directly slice the query set
         :return:
         """
         try:

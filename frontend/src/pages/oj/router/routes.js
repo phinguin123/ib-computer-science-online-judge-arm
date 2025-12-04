@@ -6,6 +6,7 @@ import {
   ApplyResetPassword,
   FAQ,
   Home,
+  Leaderboard,
   Logout,
   NotFound,
   OIRank,
@@ -124,6 +125,12 @@ export default [
     path: '/oi-rank',
     meta: {title: 'OI Rankings'},
     component: OIRank
+  },
+  {
+    name: 'leaderboard',
+    path: '/leaderboard',
+    meta: {title: 'Leaderboard'},
+    component: Leaderboard
   },
   {
     name: 'user-home',

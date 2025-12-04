@@ -19,12 +19,22 @@ from utils.captcha import Captcha
 from utils.shortcuts import rand_str, img2base64, datetime2str
 from ..decorators import login_required
 from ..models import User, UserProfile, AdminType
-from ..serializers import (ApplyResetPasswordSerializer, ResetPasswordSerializer,
-                           UserChangePasswordSerializer, UserLoginSerializer,
-                           UserRegisterSerializer, UsernameOrEmailCheckSerializer,
-                           RankInfoSerializer, UserChangeEmailSerializer, SSOSerializer)
-from ..serializers import (TwoFactorAuthCodeSerializer, UserProfileSerializer,
-                           EditUserProfileSerializer, ImageUploadForm)
+from ..serializers import (
+    ApplyResetPasswordSerializer,
+    EditUserProfileSerializer,
+    ImageUploadForm,
+    LeaderboardSerializer,
+    RankInfoSerializer,
+    ResetPasswordSerializer,
+    SSOSerializer,
+    TwoFactorAuthCodeSerializer,
+    UserChangeEmailSerializer,
+    UserChangePasswordSerializer,
+    UserLoginSerializer,
+    UserProfileSerializer,
+    UserRegisterSerializer,
+    UsernameOrEmailCheckSerializer,
+)
 from ..tasks import send_email_async
 
 
@@ -32,7 +42,7 @@ class UserProfileAPI(APIView):
     @method_decorator(ensure_csrf_cookie)
     def get(self, request, **kwargs):
         """
-        判断是否登录， 若登录返回用户信息
+        Check if logged in, if logged in return user information
         """
         user = request.user
         if not user.is_authenticated:
@@ -44,7 +54,7 @@ class UserProfileAPI(APIView):
                 user = User.objects.get(username=username, is_disabled=False)
             else:
                 user = request.user
-                # api返回的是自己的信息，可以返real_name
+                # API returns own information, can return real_name
                 show_real_name = True
         except User.DoesNotExist:
             return self.error("User does not exist")
@@ -434,3 +444,16 @@ class SSOAPI(CSRFExemptAPIView):
         except User.DoesNotExist:
             return self.error("User does not exist")
         return self.success({"username": user.username, "avatar": user.userprofile.avatar, "admin_type": user.admin_type})
+
+
+class LeaderboardAPI(APIView):
+    def get(self, request):
+        # 1. Get top 100 users sorted by score (Highest first)
+        # select_related('user') speeds up the query by grabbing usernames in one go
+        users = UserProfile.objects.select_related('user').order_by('-total_score')[:100]
+        
+        # 2. Package the data using your new Serializer
+        serializer = LeaderboardSerializer(users, many=True)
+        
+        # 3. Return it
+        return self.success(serializer.data)

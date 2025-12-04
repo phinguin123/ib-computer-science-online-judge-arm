@@ -23,6 +23,9 @@
           <Icon type="podium"></Icon>
           {{$t('m.Rank')}}
         </template>
+        <Menu-item name="/leaderboard">
+          Leaderboard
+        </Menu-item>
         <Menu-item name="/acm-rank">
           {{$t('m.ACM_Rank')}}
         </Menu-item>

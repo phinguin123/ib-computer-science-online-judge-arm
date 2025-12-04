@@ -141,3 +141,25 @@ class RankInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = "__all__"
+
+
+class LeaderboardSerializer(serializers.ModelSerializer):
+    # Flatten the username so the frontend gets "username": "Player1" 
+    # instead of "user": {"username": "Player1"}
+    username = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserProfile
+        # These are the specific columns for your "Shiny" table
+        fields = [
+            'username', 
+            'avatar', 
+            'total_score', 
+            'tier', 
+            'accepted_number', 
+            'submission_number'
+        ]
+    
+    def get_username(self, obj):
+        # Safely get username, handling cases where user might not exist
+        return obj.user.username if obj.user else 'Unknown'

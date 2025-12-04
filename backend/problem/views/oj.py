@@ -46,7 +46,7 @@ class ProblemAPI(APIView):
                     problem["my_status"] = oi_problems_status.get(str(problem["id"]), {}).get("status")
 
     def get(self, request):
-        # 问题详情页
+        # Problem detail page
         problem_id = request.GET.get("problem_id")
         if problem_id:
             try:
@@ -63,21 +63,21 @@ class ProblemAPI(APIView):
             return self.error("Limit is needed")
 
         problems = Problem.objects.select_related("created_by").filter(contest_id__isnull=True, visible=True)
-        # 按照标签筛选
+        # Filter by tag
         tag_text = request.GET.get("tag")
         if tag_text:
             problems = problems.filter(tags__name=tag_text)
 
-        # 搜索的情况
+        # Search case
         keyword = request.GET.get("keyword", "").strip()
         if keyword:
             problems = problems.filter(Q(title__icontains=keyword) | Q(_id__icontains=keyword))
 
-        # 难度筛选
+        # Difficulty filter
         difficulty = request.GET.get("difficulty")
         if difficulty:
             problems = problems.filter(difficulty=difficulty)
-        # 根据profile 为做过的题目添加标记
+        # Add markers to problems that have been solved based on profile
         data = self.paginate_data(request, problems, ProblemSerializer)
         self._add_problem_status(request, data)
         return self.success(data)

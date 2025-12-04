@@ -31,11 +31,11 @@ class Submission(models.Model):
     username = models.TextField()
     code = models.TextField()
     result = models.IntegerField(db_index=True, default=JudgeStatus.PENDING)
-    # 从JudgeServer返回的判题详情
+    # Judging details returned from JudgeServer
     info = JSONField(default=dict)
     language = models.TextField()
     shared = models.BooleanField(default=False)
-    # 存储该提交所用时间和内存值，方便提交列表显示
+    # Store the time and memory used by this submission, convenient for submission list display
     # {time_cost: "", memory_cost: "", err_info: "", score: 0}
     statistic_info = JSONField(default=dict)
     ip = models.TextField(null=True)

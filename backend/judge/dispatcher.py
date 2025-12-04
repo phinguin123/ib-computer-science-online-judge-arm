@@ -20,10 +20,10 @@ from utils.constants import CacheKey
 logger = logging.getLogger(__name__)
 
 
-# 继续处理在队列中的问题
+# Continue processing problems in the queue
 def process_pending_task():
     if cache.llen(CacheKey.waiting_queue):
-        # 防止循环引入
+        # Prevent circular import
         from judge.tasks import judge_task
         tmp_data = cache.rpop(CacheKey.waiting_queue)
         if tmp_data:
@@ -102,7 +102,7 @@ class JudgeDispatcher(DispatcherBase):
             self.problem = Problem.objects.get(id=problem_id)
 
     def _compute_statistic_info(self, resp_data):
-        # 用时和内存占用保存为多个测试点中最长的那个
+        # Save time and memory usage as the longest among multiple test cases
         self.submission.statistic_info["time_cost"] = max([x["cpu_time"] for x in resp_data])
         self.submission.statistic_info["memory_cost"] = max([x["memory"] for x in resp_data])
 
@@ -173,8 +173,8 @@ class JudgeDispatcher(DispatcherBase):
             self.submission.info = resp
             self._compute_statistic_info(resp["data"])
             error_test_case = list(filter(lambda case: case["result"] != 0, resp["data"]))
-            # ACM模式下,多个测试点全部正确则AC，否则取第一个错误的测试点的状态
-            # OI模式下, 若多个测试点全部正确则AC， 若全部错误则取第一个错误测试点状态，否则为部分正确
+            # In ACM mode, if all test cases are correct then AC, otherwise take the status of the first wrong test case
+            # In OI mode, if all test cases are correct then AC, if all are wrong then take the first wrong test case status, otherwise partially correct
             if not error_test_case:
                 self.submission.result = JudgeStatus.ACCEPTED
             elif self.problem.rule_type == ProblemRuleType.ACM or len(error_test_case) == len(resp["data"]):
@@ -198,7 +198,7 @@ class JudgeDispatcher(DispatcherBase):
             else:
                 self.update_problem_status()
 
-        # 至此判题结束，尝试处理任务队列中剩余的任务
+        # Judging is complete, try to process remaining tasks in the queue
         process_pending_task()
 
     def update_problem_status_rejudge(self):
@@ -301,7 +301,7 @@ class JudgeDispatcher(DispatcherBase):
                 elif contest_problems_status[problem_id]["status"] != JudgeStatus.ACCEPTED:
                     contest_problems_status[problem_id]["status"] = self.submission.result
                 else:
-                    # 如果已AC， 直接跳过 不计入任何计数器
+                    # If already AC, skip directly, don't count in any counter
                     return
                 user_profile.acm_problems_status["contest_problems"] = contest_problems_status
                 user_profile.save(update_fields=["acm_problems_status"])
@@ -354,9 +354,9 @@ class JudgeDispatcher(DispatcherBase):
 
     def _update_acm_contest_rank(self, rank):
         info = rank.submission_info.get(str(self.submission.problem_id))
-        # 因前面更改过，这里需要重新获取
+        # Because it was changed earlier, need to re-fetch here
         problem = Problem.objects.select_for_update().get(contest_id=self.contest_id, id=self.problem.id)
-        # 此题提交过
+        # This problem has been submitted
         if info:
             if info["is_ac"]:
                 return
@@ -373,7 +373,7 @@ class JudgeDispatcher(DispatcherBase):
             elif self.submission.result != JudgeStatus.COMPILE_ERROR:
                 info["error_number"] += 1
 
-        # 第一次提交
+        # First submission
         else:
             rank.submission_number += 1
             info = {"is_ac": False, "ac_time": 0, "error_number": 0, "is_first_ac": False}

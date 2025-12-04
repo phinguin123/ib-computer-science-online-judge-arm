@@ -27,6 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Applications
 VENDOR_APPS = [
+    'django.contrib.admin',       # Maybe remove for production
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.contenttypes',
