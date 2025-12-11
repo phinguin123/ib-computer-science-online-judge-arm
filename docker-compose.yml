@@ -67,6 +67,12 @@ services:
       - "8000"
     networks:
       - oj-network
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import socket; s=socket.socket(); s.connect((\"localhost\", 8000)); s.close()' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   # ----------------------------------------
   # 4. FRONTEND (Vue + Nginx)
@@ -75,7 +81,8 @@ services:
     image: grow20/onlinejudge-frontend:latest
     restart: always
     depends_on:
-      - oj-backend
+      oj-backend:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"

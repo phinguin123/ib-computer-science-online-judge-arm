@@ -91,9 +91,15 @@ export const m = {
   Source: '来源',
   Edit_Problem: '编辑问题',
   Add_Problem: '添加问题',
-  High: '高',
-  Mid: '中',
-  Low: '低',
+  Level_1: '等级 1',
+  Level_2: '等级 2',
+  Level_3: '等级 3',
+  Level_4: '等级 4',
+  Level_5: '等级 5',
+  // Legacy support
+  High: '等级 5',
+  Mid: '等级 3',
+  Low: '等级 1',
   Tag: '标签',
   New_Tag: '新增标签',
   // ProblemList.vue

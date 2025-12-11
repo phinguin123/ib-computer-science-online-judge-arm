@@ -40,13 +40,13 @@
           },
           {
             title: 'User',
-            align: 'center',
+            align: 'left',
             render: (h, params) => {
               return h('div', {
                 style: {
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'flex-start'
                 }
               }, [
                 h('img', {
@@ -54,16 +54,32 @@
                     width: '32px',
                     height: '32px',
                     borderRadius: '50%',
-                    marginRight: '10px'
+                    marginRight: '10px',
+                    flexShrink: 0,
+                    objectFit: 'cover'
                   },
                   attrs: {
-                    src: params.row.avatar
+                    src: params.row.avatar || '/public/avatar/default.png'
+                  },
+                  on: {
+                    error: (e) => {
+                      // Prevent infinite loop - only set default if not already trying to load it
+                      if (e.target.src && !e.target.src.includes('default.png')) {
+                        e.target.src = '/public/avatar/default.png'
+                      } else {
+                        // If default.png also fails, use a data URI placeholder to stop the loop
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNEOUQ5RDkiLz4KPHBhdGggZD0iTTE2IDEwQzE4LjIwOTEgMTAgMjAgMTEuNzkwOSAyMCAxNEMyMCAxNi4yMDkxIDE4LjIwOTEgMTggMTYgMThDMTMuNzkwOSAxOCAxMiAxNi4yMDkxIDEyIDE0QzEyIDExLjc5MDkgMTMuNzkwOSAxMCAxNiAxMFoiIGZpbGw9IiM5OTk5OTkiLz4KPHBhdGggZD0iTTE2IDIyQzE4LjY2NjcgMjIgMjEgMjAuNjY2NyAyMSAxOEgyMUMxOSAyMi4yMDkxIDE3LjIwOTEgMjQgMTUgMjRIMTdDMTQuMzMzMyAyNCAxMiAyMi42NjY3IDEyIDIwSDEyQzEyIDIyLjIwOTEgMTMuNzkwOSAyNCAxNiAyNFoiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+'
+                        e.target.onerror = null // Remove error handler to prevent further loops
+                      }
+                    }
                   }
                 }),
                 h('a', {
                   style: {
                     display: 'inline-block',
-                    maxWidth: '200px'
+                    maxWidth: '200px',
+                    verticalAlign: 'middle',
+                    lineHeight: '32px'
                   },
                   on: {
                     click: () => {

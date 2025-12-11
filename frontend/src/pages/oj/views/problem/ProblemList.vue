@@ -12,9 +12,11 @@
               </span>
               <Dropdown-menu slot="list">
                 <Dropdown-item name="">{{$t('m.All')}}</Dropdown-item>
-                <Dropdown-item name="Low">{{$t('m.Low')}}</Dropdown-item>
-                <Dropdown-item name="Mid" >{{$t('m.Mid')}}</Dropdown-item>
-                <Dropdown-item name="High">{{$t('m.High')}}</Dropdown-item>
+                <Dropdown-item name="Level 1">{{$t('m.Level_1')}}</Dropdown-item>
+                <Dropdown-item name="Level 2">{{$t('m.Level_2')}}</Dropdown-item>
+                <Dropdown-item name="Level 3">{{$t('m.Level_3')}}</Dropdown-item>
+                <Dropdown-item name="Level 4">{{$t('m.Level_4')}}</Dropdown-item>
+                <Dropdown-item name="Level 5">{{$t('m.Level_5')}}</Dropdown-item>
               </Dropdown-menu>
             </Dropdown>
           </li>
@@ -138,13 +140,21 @@
             render: (h, params) => {
               let t = params.row.difficulty
               let color = 'blue'
-              if (t === 'Low') color = 'green'
-              else if (t === 'High') color = 'yellow'
+              // Map difficulty levels to colors
+              if (t === 'Level 1' || t === 'Low') color = 'green'
+              else if (t === 'Level 2') color = 'cyan'
+              else if (t === 'Level 3' || t === 'Mid') color = 'blue'
+              else if (t === 'Level 4') color = 'orange'
+              else if (t === 'Level 5' || t === 'High') color = 'red'
+              // Handle translation key (replace spaces with underscores)
+              const displayText = t.replace(/ /g, '_')
+              const translationKey = 'm.' + displayText
+              const displayName = this.$i18n.te(translationKey) ? this.$i18n.t(translationKey) : t
               return h('Tag', {
                 props: {
                   color: color
                 }
-              }, this.$i18n.t('m.' + params.row.difficulty))
+              }, displayName)
             }
           },
           {

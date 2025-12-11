@@ -49,9 +49,11 @@
           <el-col :span="8">
             <el-form-item :label="$t('m.Difficulty')">
               <el-select class="difficulty-select" size="small" :placeholder="$t('m.Difficulty')" v-model="problem.difficulty">
-                <el-option :label="$t('m.Low')" value="Low"></el-option>
-                <el-option :label="$t('m.Mid')" value="Mid"></el-option>
-                <el-option :label="$t('m.High')" value="High"></el-option>
+                <el-option :label="$t('m.Level_1')" value="Level 1"></el-option>
+                <el-option :label="$t('m.Level_2')" value="Level 2"></el-option>
+                <el-option :label="$t('m.Level_3')" value="Level 3"></el-option>
+                <el-option :label="$t('m.Level_4')" value="Level 4"></el-option>
+                <el-option :label="$t('m.Level_5')" value="Level 5"></el-option>
               </el-select>
             </el-form-item>
           </el-col>

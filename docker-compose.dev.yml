@@ -5,7 +5,6 @@
 # It builds from local source code.
 # Runs on custom ports (8000/8088) to avoid conflicts with Staging.
 # Mounts local volumes for hot-reloading.
-# Uses separate named volumes for databases to avoid data conflicts.
 
 services:
   # ----------------------------------------
@@ -55,8 +54,6 @@ services:
     volumes:
       - ./data/backend:/data
       # Mount backend source for hot-reloading
-      # Note: This overrides /app, so dist won't be available
-      # For frontend changes, rebuild or use the frontend dev service
       - ./backend:/app
     environment:
       - POSTGRES_DB=onlinejudge
@@ -77,14 +74,12 @@ services:
       - "8000:8000"
     networks:
       - oj-dev-network
+    # Forces usage of runserver instead of gunicorn/supervisor
     entrypoint: python3 manage.py runserver 0.0.0.0:8000
 
   # ----------------------------------------
   # 4. FRONTEND (Vue.js with Hot-Reloading)
   # ----------------------------------------
-  # This service runs the Vue.js dev server for hot-reloading
-  # It proxies API requests to the backend container
-  # Note: The dev server runs on port 8088 (mapped from container's 8080)
   oj-frontend:
     build:
       context: ./frontend
@@ -101,12 +96,11 @@ services:
       - PORT=8080
       - NODE_ENV=development
     ports:
-      # ✅ Host 8088 -> Container 8080
+      # Host 8088 -> Container 8080
       - "8088:8080"
     networks:
       - oj-dev-network
-    # Use command to run dev server instead of production build
-    # Build DLL first (only needed once, but safe to run each time)
+    # Fixes git ssh errors and uses yarn
     command: > 
       sh -c "git config --global url.'https://github.com/'.insteadOf git@github.com: &&
       git config --global url.'https://github.com/'.insteadOf ssh://git@github.com/ &&
@@ -139,7 +133,6 @@ services:
 # ----------------------------------------
 # Named Volumes (Development)
 # ----------------------------------------
-# These named volumes ensure data isolation from production/staging
 volumes:
   dev_redis_data:
   dev_postgres_data:

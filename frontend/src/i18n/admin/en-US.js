@@ -91,9 +91,15 @@ export const m = {
   Source: 'Source',
   Edit_Problem: 'Edit Problme',
   Add_Problme: 'Add Problem',
-  High: 'High',
-  Mid: 'Mid',
-  Low: 'Low',
+  Level_1: 'Level 1',
+  Level_2: 'Level 2',
+  Level_3: 'Level 3',
+  Level_4: 'Level 4',
+  Level_5: 'Level 5',
+  // Legacy support
+  High: 'Level 5',
+  Mid: 'Level 3',
+  Low: 'Level 1',
   Tag: 'Tag',
   New_Tag: 'New Tag',
    // ProblemList.vue

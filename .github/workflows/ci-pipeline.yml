@@ -1,0 +1,38 @@
+name: CI Pipeline
+
+# Trigger: Run this robot whenever code is pushed to 'main' or 'master'
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    # The Robot's OS (Virtual Machine)
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Download your code to the robot
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 2. Spin up your entire architecture (just like on your server)
+      - name: Start Containers
+        run: docker compose up -d --build
+
+      # 3. Wait for Database (Crucial!)
+      # The containers start fast, but Postgres takes seconds to be "ready".
+      # Without this, tests will fail with "Connection Refused".
+      - name: Wait for Database
+        run: sleep 15
+
+      # 4. Run the Tests (The exact command you ran manually)
+      # Note: We add '-T' to disable TTY because robots don't have keyboards.
+      - name: Run Integration Tests
+        run: docker compose exec -T oj-backend python manage.py test tests
+        
+      # 5. Clean up (Optional, but good practice)
+      - name: Stop Containers
+        if: always()
+        run: docker compose down

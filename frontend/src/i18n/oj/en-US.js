@@ -194,9 +194,15 @@ export const m = {
   Total_Score: 'Total Score',
   // ProblemList.vue
   Problem_List: 'Problem List',
-  High: 'High',
-  Mid: 'Mid',
-  Low: 'Low',
+  Level_1: 'Level 1',
+  Level_2: 'Level 2',
+  Level_3: 'Level 3',
+  Level_4: 'Level 4',
+  Level_5: 'Level 5',
+  // Legacy support
+  High: 'Level 5',
+  Mid: 'Level 3',
+  Low: 'Level 1',
   All: 'All',
   Reset: 'Reset',
   Pick_One: 'Pick one',

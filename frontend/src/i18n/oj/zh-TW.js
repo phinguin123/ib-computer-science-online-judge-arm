@@ -194,9 +194,15 @@ export const m = {
   Total_Score: '總分',
   // ProblemList.vue
   Problem_List: '試題列表',
-  High: '高級',
-  Mid: '中級',
-  Low: '初級',
+  Level_1: '等級 1',
+  Level_2: '等級 2',
+  Level_3: '等級 3',
+  Level_4: '等級 4',
+  Level_5: '等級 5',
+  // Legacy support
+  High: '等級 5',
+  Mid: '等級 3',
+  Low: '等級 1',
   All: '全部',
   Reset: '重置',
   Pick_One: '選擇',

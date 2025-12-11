@@ -245,47 +245,107 @@ class JudgeDispatcher(DispatcherBase):
             # update problem status
             problem = Problem.objects.select_for_update().get(contest_id=self.contest_id, id=self.problem.id)
             problem.submission_number += 1
+            
+            # Calculate dynamic score BEFORE incrementing accepted_number (for new solves)
+            # This gives us the score at the current solve count
+            was_already_solved = False
             if self.submission.result == JudgeStatus.ACCEPTED:
-                problem.accepted_number += 1
+                # Check if user already solved this problem
+                user = User.objects.select_for_update().get(id=self.submission.user_id)
+                user_profile = user.userprofile
+                
+                if problem.rule_type == ProblemRuleType.ACM:
+                    acm_problems_status = user_profile.acm_problems_status.get("problems", {})
+                    was_already_solved = (problem_id in acm_problems_status and 
+                                         acm_problems_status[problem_id].get("status") == JudgeStatus.ACCEPTED)
+                else:
+                    oi_problems_status = user_profile.oi_problems_status.get("problems", {})
+                    was_already_solved = (problem_id in oi_problems_status and 
+                                         oi_problems_status[problem_id].get("status") == JudgeStatus.ACCEPTED)
+                
+                # Only increment if this is a new solve
+                if not was_already_solved:
+                    problem.accepted_number += 1
+            
             problem_info = problem.statistic_info
             problem_info[result] = problem_info.get(result, 0) + 1
             problem.save(update_fields=["accepted_number", "submission_number", "statistic_info"])
+            
+            # Refresh problem to get updated accepted_number for score calculation
+            problem.refresh_from_db()
 
             # update_userprofile
             user = User.objects.select_for_update().get(id=self.submission.user_id)
             user_profile = user.userprofile
             user_profile.submission_number += 1
+            
             if problem.rule_type == ProblemRuleType.ACM:
+                # ACM mode: Use dynamic scoring when problem is accepted
                 acm_problems_status = user_profile.acm_problems_status.get("problems", {})
+                
                 if problem_id not in acm_problems_status:
                     acm_problems_status[problem_id] = {"status": self.submission.result, "_id": self.problem._id}
                     if self.submission.result == JudgeStatus.ACCEPTED:
+                        # Calculate dynamic score for this problem
+                        dynamic_score = problem.get_current_points()
+                        user_profile.add_score(dynamic_score)
+                        acm_problems_status[problem_id]["score"] = dynamic_score
                         user_profile.accepted_number += 1
                 elif acm_problems_status[problem_id]["status"] != JudgeStatus.ACCEPTED:
                     acm_problems_status[problem_id]["status"] = self.submission.result
                     if self.submission.result == JudgeStatus.ACCEPTED:
+                        # Calculate dynamic score for this problem
+                        dynamic_score = problem.get_current_points()
+                        last_score = acm_problems_status[problem_id].get("score", 0)
+                        user_profile.add_score(this_time_score=dynamic_score, last_time_score=last_score)
+                        acm_problems_status[problem_id]["score"] = dynamic_score
                         user_profile.accepted_number += 1
                 user_profile.acm_problems_status["problems"] = acm_problems_status
                 user_profile.save(update_fields=["submission_number", "accepted_number", "acm_problems_status"])
 
             else:
+                # OI mode: Use dynamic scoring when problem is fully accepted
                 oi_problems_status = user_profile.oi_problems_status.get("problems", {})
-                score = self.submission.statistic_info["score"]
+                
+                # For OI mode, check if all test cases passed (score matches total)
+                # If fully accepted, use dynamic scoring; otherwise use partial score
+                test_case_total = sum([tc.get("score", 0) for tc in problem.test_case_score])
+                submission_score = self.submission.statistic_info.get("score", 0)
+                is_fully_accepted = (self.submission.result == JudgeStatus.ACCEPTED and 
+                                    submission_score >= test_case_total)
+                
                 if problem_id not in oi_problems_status:
-                    user_profile.add_score(score)
-                    oi_problems_status[problem_id] = {"status": self.submission.result,
-                                                      "_id": self.problem._id,
-                                                      "score": score}
-                    if self.submission.result == JudgeStatus.ACCEPTED:
+                    if is_fully_accepted:
+                        # Use dynamic scoring for full acceptance
+                        dynamic_score = problem.get_current_points()
+                        user_profile.add_score(dynamic_score)
+                        oi_problems_status[problem_id] = {"status": self.submission.result,
+                                                          "_id": self.problem._id,
+                                                          "score": dynamic_score}
                         user_profile.accepted_number += 1
-                elif oi_problems_status[problem_id]["status"] != JudgeStatus.ACCEPTED:
-                    # minus last time score, add this time score
-                    user_profile.add_score(this_time_score=score,
-                                           last_time_score=oi_problems_status[problem_id]["score"])
-                    oi_problems_status[problem_id]["score"] = score
+                    else:
+                        # Partial score - use test case score
+                        user_profile.add_score(submission_score)
+                        oi_problems_status[problem_id] = {"status": self.submission.result,
+                                                          "_id": self.problem._id,
+                                                          "score": submission_score}
+                elif oi_problems_status[problem_id]["status"] != JudgeStatus.ACCEPTED or not is_fully_accepted:
+                    # Update score
+                    last_score = oi_problems_status[problem_id].get("score", 0)
+                    
+                    if is_fully_accepted:
+                        # Upgrade to full acceptance - use dynamic scoring
+                        dynamic_score = problem.get_current_points()
+                        user_profile.add_score(this_time_score=dynamic_score, last_time_score=last_score)
+                        oi_problems_status[problem_id]["score"] = dynamic_score
+                        if oi_problems_status[problem_id]["status"] != JudgeStatus.ACCEPTED:
+                            user_profile.accepted_number += 1
+                    else:
+                        # Partial score update
+                        user_profile.add_score(this_time_score=submission_score, last_time_score=last_score)
+                        oi_problems_status[problem_id]["score"] = submission_score
+                    
                     oi_problems_status[problem_id]["status"] = self.submission.result
-                    if self.submission.result == JudgeStatus.ACCEPTED:
-                        user_profile.accepted_number += 1
                 user_profile.oi_problems_status["problems"] = oi_problems_status
                 user_profile.save(update_fields=["submission_number", "accepted_number", "oi_problems_status"])
 

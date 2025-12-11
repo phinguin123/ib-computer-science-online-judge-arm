@@ -20,9 +20,16 @@ class ProblemRuleType(Choices):
 
 
 class ProblemDifficulty(object):
-    High = "High"
-    Mid = "Mid"
-    Low = "Low"
+    LEVEL_1 = "Level 1"
+    LEVEL_2 = "Level 2"
+    LEVEL_3 = "Level 3"
+    LEVEL_4 = "Level 4"
+    LEVEL_5 = "Level 5"
+    
+    # Legacy support
+    High = "Level 5"
+    Mid = "Level 3"
+    Low = "Level 1"
 
 
 class ProblemIOMode(Choices):
@@ -94,3 +101,22 @@ class Problem(models.Model):
     def add_ac_number(self):
         self.accepted_number = models.F("accepted_number") + 1
         self.save(update_fields=["accepted_number"])
+    
+    def get_current_points(self):
+        """
+        Calculate the current dynamic points for this problem based on difficulty and solve count.
+        Uses the Hybrid Dynamic Scoring System.
+        
+        Returns:
+            int: Current point value for this problem
+        """
+        from utils.scoring import calculate_problem_points
+        solve_count = self.accepted_number or 0
+        return calculate_problem_points(self.difficulty, solve_count)
+    
+    @property
+    def current_points(self):
+        """
+        Property accessor for current points (for serializers/API).
+        """
+        return self.get_current_points()

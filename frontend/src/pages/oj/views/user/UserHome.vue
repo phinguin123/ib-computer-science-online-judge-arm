@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="avatar-container">
-      <img class="avatar" :src="profile.avatar"/>
+      <img class="avatar" :src="profile.avatar || '/public/avatar/default.png'" @error="handleAvatarError"/>
     </div>
     <Card :padding="100">
       <div v-if="profile.user">
@@ -111,6 +111,16 @@
           this.$success('Update successfully')
           this.init()
         })
+      },
+      handleAvatarError (e) {
+        // Prevent infinite loop - only set default if not already trying to load it
+        if (e.target.src && !e.target.src.includes('default.png')) {
+          e.target.src = '/public/avatar/default.png'
+        } else {
+          // If default.png also fails, use a data URI placeholder to stop the loop
+          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiNEOUQ5RDkiLz4KPHBhdGggZD0iTTE2IDEwQzE4LjIwOTEgMTAgMjAgMTEuNzkwOSAyMCAxNEMyMCAxNi4yMDkxIDE4LjIwOTEgMTggMTYgMThDMTMuNzkwOSAxOCAxMiAxNi4yMDkxIDEyIDE0QzEyIDExLjc5MDkgMTMuNzkwOSAxMCAxNiAxMFoiIGZpbGw9IiM5OTk5OTkiLz4KPHBhdGggZD0iTTE2IDIyQzE4LjY2NjcgMjIgMjEgMjAuNjY2NyAyMSAxOEgyMUMxOSAyMi4yMDkxIDE3LjIwOTEgMjQgMTUgMjRIMTdDMTQuMzMzMyAyNCAxMiAyMi42NjY3IDEyIDIwSDEyQzEyIDIyLjIwOTEgMTMuNzkwOSAyNCAxNiAyNFoiIGZpbGw9IiM5OTk5OTkiLz4KPC9zdmc+'
+          e.target.onerror = null // Remove error handler to prevent further loops
+        }
       }
     },
     computed: {

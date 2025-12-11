@@ -1,5 +1,5 @@
 FROM python:3.12-alpine
-ENV OJ_ENV production
+ENV OJ_ENV=production
 WORKDIR /app
 
 # 1. Install System Dependencies
@@ -13,6 +13,7 @@ RUN groupadd -r spj && useradd -r -g spj spj && \
     useradd -r server
 
 # 3. Install Python Dependencies
+# Note: build context is ./backend, so paths are relative to that.
 COPY ./deploy/requirements.txt /app/deploy/
 RUN pip install --no-cache-dir -r /app/deploy/requirements.txt
 

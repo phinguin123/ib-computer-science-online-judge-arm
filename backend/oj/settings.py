@@ -27,19 +27,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Applications
 VENDOR_APPS = [
-    'django.contrib.admin',       # Maybe remove for production
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sessions',
     'django.contrib.contenttypes',
-    'django.contrib.messages',
+    'django.contrib.messages',  # <--- Make sure this appears ONLY ONCE in the combined list
     'django.contrib.staticfiles',
     'rest_framework',
     'django_dramatiq',
     'django_dbconn_retry',
 ]
 
-if production_env:
-    VENDOR_APPS.append('raven.contrib.django.raven_compat')
+#if production_env:
+#    VENDOR_APPS.append('raven.contrib.django.raven_compat')
 
 
 LOCAL_APPS = [
@@ -135,10 +135,16 @@ AVATAR_UPLOAD_DIR = f"{DATA_DIR}{AVATAR_URI_PREFIX}"
 UPLOAD_PREFIX = "/public/upload"
 UPLOAD_DIR = f"{DATA_DIR}{UPLOAD_PREFIX}"
 
-STATICFILES_DIRS = [os.path.join(DATA_DIR, "public")]
+# 1. Define where collectstatic should dump the files
+STATIC_ROOT = os.path.join(DATA_DIR, "public")  # ✅ Moved to DATA_DIR
 
+# 2. Comment this out (or delete it). 
+# You cannot have STATIC_ROOT and STATICFILES_DIRS pointing to the same place.
+# STATICFILES_DIRS = [os.path.join(DATA_DIR, "public")]  # ✅ Moved to DATA_DIR
 
-LOGGING_HANDLERS = ['console', 'sentry'] if production_env else ['console']
+# Force console logging only to avoid loading the broken Sentry handler
+LOGGING_HANDLERS = ['console']
+# LOGGING_HANDLERS = ['console', 'sentry'] if production_env else ['console']
 LOGGING = {
    'version': 1,
    'disable_existing_loggers': False,

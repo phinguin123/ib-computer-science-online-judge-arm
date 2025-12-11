@@ -28,42 +28,52 @@ class CacheKey:
 
 
 class Difficulty(Choices):
-    LOW = "Low"
-    MID = "Mid"
-    HIGH = "High"
+    LEVEL_1 = "Level 1"
+    LEVEL_2 = "Level 2"
+    LEVEL_3 = "Level 3"
+    LEVEL_4 = "Level 4"
+    LEVEL_5 = "Level 5"
+    
+    # Legacy support - map old values to new levels
+    LOW = "Level 1"
+    MID = "Level 3"
+    HIGH = "Level 5"
 
 
 class TierConfig:
     # (Threshold Score, Tier Name)
     # The logic checks from TOP to BOTTOM.
     # The first threshold your score beats is your tier.
+    # Updated thresholds per requirements
     THRESHOLDS = [
-        (5000, "Master"),       # 5000+ = Master (Shiny Hologram!)
+        (5005, "Master"),       # 5005+ = Master
         
-        (4500, "Diamond 1"),
-        (4000, "Diamond 2"),
-        (3500, "Diamond 3"),
-        (3000, "Diamond 4"),
+        (4505, "Diamond 1"),
+        (4005, "Diamond 2"),
+        (3505, "Diamond 3"),
+        (3005, "Diamond 4"),
         
-        (2500, "Platinum 1"),
-        (2250, "Platinum 2"),
-        (2000, "Platinum 3"),
-        (1750, "Platinum 4"),
+        (2505, "Platinum 1"),
+        (2255, "Platinum 2"),
+        (2005, "Platinum 3"),
+        (1755, "Platinum 4"),
         
-        (1500, "Gold 1"),
-        (1250, "Gold 2"),
-        (1000, "Gold 3"),
-        (800,  "Gold 4"),
+        (1505, "Gold 1"),
+        (1255, "Gold 2"),
+        (1005, "Gold 3"),
+        (805,  "Gold 4"),
         
-        (600,  "Silver 1"),
-        (450,  "Silver 2"),
-        (300,  "Silver 3"),
-        (150,  "Silver 4"),
+        (605,  "Silver 1"),
+        (455,  "Silver 2"),
+        (305,  "Silver 3"),
+        (155,  "Silver 4"),
         
-        (100,  "Bronze 1"),
-        (60,   "Bronze 2"),
-        (30,   "Bronze 3"),
-        (0,    "Bronze 4"),    # Everyone starts here
+        (105,  "Bronze 1"),
+        (65,   "Bronze 2"),
+        (35,   "Bronze 3"),
+        (5,    "Bronze 4"),
+        
+        (0,    "Unranked"),     # 0 points = Unranked
     ]
 
     @staticmethod
@@ -72,16 +82,20 @@ class TierConfig:
         Input: Integer (e.g. 1550)
         Output: String (e.g. "Gold 1")
         """
-        # Handle negative scores (if you implement penalties later)
+        # Handle negative scores
         if score < 0:
-            return "Bronze 4"
+            return "Unranked"
+        
+        # If score is 0, return Unranked
+        if score == 0:
+            return "Unranked"
             
         for threshold, tier_name in TierConfig.THRESHOLDS:
             if score >= threshold:
                 return tier_name
                 
         # Fallback (shouldn't happen if 0 is in the list)
-        return "Bronze 4"
+        return "Unranked"
 
 
 CONTEST_PASSWORD_SESSION_KEY = "contest_password"

@@ -63,20 +63,18 @@ Vue.prototype.$error = (s) => Vue.prototype.$Message.error(s)
 Vue.prototype.$info = (s) => Vue.prototype.$Message.info(s)
 Vue.prototype.$success = (s) => Vue.prototype.$Message.success(s)
 
-// Handle unhandled promise rejections to prevent console errors
+// Handle unhandled promise rejections to prevent noisy console/toast spam
 window.addEventListener('unhandledrejection', event => {
   // Prevent the default browser console error
   event.preventDefault()
-  // If it's an axios error with error data, show it to the user
+  // If it's an axios error with error data, the ajax helper already surfaced it
   if (event.reason && event.reason.response && event.reason.response.data) {
     const errorData = event.reason.response.data
     if (errorData.error && errorData.data) {
-      // Error was already shown by the ajax function, just suppress the console error
       return
     }
   }
-  // For other unhandled rejections, log them but don't show to user
-  console.warn('Unhandled promise rejection:', event.reason)
+  // Otherwise swallow silently; real errors still appear via component catches.
 })
 
 new Vue(Vue.util.extend({router, store, i18n}, App)).$mount('#app')
