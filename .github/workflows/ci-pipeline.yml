@@ -10,7 +10,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # 1. FIX: Give the robot the missing variables
+    # Environment variables for testing (Safe to use dummy values here)
     env:
       POSTGRES_DB: onlinejudge
       POSTGRES_USER: onlinejudge
@@ -18,20 +18,35 @@ jobs:
       REDIS_PASSWORD: test_password
       JUDGE_SERVER_TOKEN: test_token
       ADMIN_PASSWORD: admin
-      # Force Docker to build for the robot's architecture
       DOCKER_DEFAULT_PLATFORM: linux/amd64
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # 2. FIX: Explicitly build images from scratch FIRST
-      # This prevents it from trying to pull your incompatible M1 Mac images
-      - name: Build Images from Source
-        run: docker compose build
+      # ----------------------------------------------------------------
+      # NEW STEP: The "Override" Trick
+      # This creates a temporary file that forces Docker to build locally
+      # instead of trying to pull the incompatible Mac images from Hub.
+      # ----------------------------------------------------------------
+      - name: Fix Architecture Mismatch
+        run: |
+          cat <<EOF > docker-compose.override.yml
+          services:
+            oj-backend:
+              build: ./backend
+              image: local-test-backend
+            oj-frontend:
+              build: ./frontend
+              image: local-test-frontend
+            oj-judge-server:
+              build: ./judge-server
+              image: local-test-judge
+          EOF
 
       - name: Start Containers
-        run: docker compose up -d
+        # --build forces it to use the new local override settings
+        run: docker compose up -d --build
 
       - name: Wait for Database
         run: sleep 15
