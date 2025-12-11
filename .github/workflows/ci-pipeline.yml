@@ -71,6 +71,26 @@ jobs:
         if: github.ref == 'refs/heads/main' && success()
         # We remove the override file so it uses the REAL image names (grow20/...)
         run: |
-          rm docker-compose.override.yml
+          # 1. Create a "Map" that links Source Code -> Docker Hub Names
+          # This tells Docker: "The image 'grow20/...' comes from folder './backend'"
+          cat <<EOF > docker-compose.override.yml
+          services:
+            oj-backend:
+              build:
+                context: ./backend
+              image: grow20/onlinejudge-backend:latest
+            oj-frontend:
+              build:
+                context: ./frontend
+              image: grow20/onlinejudge-frontend:latest
+            oj-judge-server:
+              build:
+                context: ./judge-server
+              image: grow20/onlinejudge-judge:latest
+          EOF
+
+          # 2. Build the images (Now Docker knows where the code is)
           docker compose build
+
+          # 3. Push them (Now Docker knows it owns these images)
           docker compose push
