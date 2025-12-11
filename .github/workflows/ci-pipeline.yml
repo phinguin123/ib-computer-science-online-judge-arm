@@ -58,39 +58,55 @@ jobs:
         if: always()
         run: docker compose down
 
+      # ----------------------------------------------------------------
+      # PART 2: DEPLOYMENT (The "Universal Delivery")
+      # We use 'buildx' to build for BOTH Intel and Apple Silicon
+      # ----------------------------------------------------------------
+      
+      - name: Set up QEMU
+        # This allows the Robot to build ARM images on an Intel machine
+        if: github.ref == 'refs/heads/main' && success()
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        # This is the "Magic Builder" that handles multi-platform
+        if: github.ref == 'refs/heads/main' && success()
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to Docker Hub
-        # Only run this on main branch, not on random pull requests
         if: github.ref == 'refs/heads/main' && success()
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and Push Real Images
+      # BUILD BACKEND (Universal)
+      - name: Build and Push Backend
         if: github.ref == 'refs/heads/main' && success()
-        # We remove the override file so it uses the REAL image names (grow20/...)
-        run: |
-          # 1. Create a "Map" that links Source Code -> Docker Hub Names
-          # This tells Docker: "The image 'grow20/...' comes from folder './backend'"
-          cat <<EOF > docker-compose.override.yml
-          services:
-            oj-backend:
-              build:
-                context: ./backend
-              image: grow20/onlinejudge-backend:latest
-            oj-frontend:
-              build:
-                context: ./frontend
-              image: grow20/onlinejudge-frontend:latest
-            oj-judge-server:
-              build:
-                context: ./judge-server
-              image: grow20/onlinejudge-judge:latest
-          EOF
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: grow20/onlinejudge-backend:latest
+          # THE MAGIC LINE: Build for both chips
+          platforms: linux/amd64,linux/arm64
 
-          # 2. Build the images (Now Docker knows where the code is)
-          docker compose build
+      # BUILD FRONTEND (Universal)
+      - name: Build and Push Frontend
+        if: github.ref == 'refs/heads/main' && success()
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: grow20/onlinejudge-frontend:latest
+          platforms: linux/amd64,linux/arm64
 
-          # 3. Push them (Now Docker knows it owns these images)
-          docker compose push
+      # BUILD JUDGE (Universal)
+      - name: Build and Push Judge
+        if: github.ref == 'refs/heads/main' && success()
+        uses: docker/build-push-action@v4
+        with:
+          context: ./judge-server
+          push: true
+          tags: grow20/onlinejudge-judge:latest
+          platforms: linux/amd64,linux/arm64
