@@ -123,8 +123,10 @@ class Command(BaseCommand):
                             self.stdout.write(f'  Solved {len(solved_problems)} problems')
                     
                     if not dry_run:
+                        # Persist new total_score, then update tier
                         profile.total_score = new_score
-                        profile.update_tier()  # This will also save the profile
+                        profile.save(update_fields=["total_score"])
+                        profile.update_tier()  # recalculates and saves tier if needed
                 
             if dry_run:
                 # Rollback transaction in dry-run mode

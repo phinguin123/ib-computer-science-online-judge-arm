@@ -57,3 +57,20 @@ jobs:
       - name: Stop Containers
         if: always()
         run: docker compose down
+
+
+      - name: Login to Docker Hub
+        # Only run this on main branch, not on random pull requests
+        if: github.ref == 'refs/heads/main' && success()
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Real Images
+        if: github.ref == 'refs/heads/main' && success()
+        # We remove the override file so it uses the REAL image names (grow20/...)
+        run: |
+          rm docker-compose.override.yml
+          docker compose build
+          docker compose push
