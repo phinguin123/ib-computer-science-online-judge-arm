@@ -16,7 +16,10 @@ __pycache__/
 *.pyc
 node_modules/
 dist/
+# Keep build artifacts out, except frontend build configs needed for image
 build/
+!frontend/build/
+!frontend/build/**
 .DS_Store
 
 # Python tooling
