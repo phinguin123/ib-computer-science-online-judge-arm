@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r /app/deploy/requirements.txt
 
 # 4. Copy Source Code
 COPY ./ /app/
-RUN chmod +x ./deploy/entrypoint.sh
+RUN chmod +x ./deploy/entrypoint.sh ./deploy/healthcheck.sh
 
 EXPOSE 8000
 ENTRYPOINT [ "/app/deploy/entrypoint.sh" ]

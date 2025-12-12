@@ -95,3 +95,4 @@ echo -e "  - ${DOCKER_REGISTRY}/${IMAGE_PREFIX}-judge:${TAG}\n"
 
 echo -e "${YELLOW}Note: Update docker-compose.yml to use these images${NC}\n"
 
+

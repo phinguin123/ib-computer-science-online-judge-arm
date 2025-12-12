@@ -100,3 +100,4 @@ def get_user_rank(total_points: int) -> str:
     from utils.constants import TierConfig
     return TierConfig.get_tier(total_points)
 
+

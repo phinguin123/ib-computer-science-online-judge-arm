@@ -68,7 +68,7 @@ services:
     networks:
       - oj-network
     healthcheck:
-      test: ["CMD-SHELL", "python3 -c 'import socket; s=socket.socket(); s.connect((\"localhost\", 8000)); s.close()' || exit 1"]
+      test: ["CMD-SHELL", "/app/deploy/healthcheck.sh || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

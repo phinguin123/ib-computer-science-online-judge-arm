@@ -163,3 +163,4 @@ class SubmissionCriticalTests(APITestCase):
         response = self.client.put(self.submission_url, data={"id": submission.id, "shared": True})
         self.assertFailed(response, "Can not share submission now")
         self.assertIn(response.status_code, (403, 404, 200))
+
