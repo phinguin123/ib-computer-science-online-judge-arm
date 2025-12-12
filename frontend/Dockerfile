@@ -1,5 +1,10 @@
-# Stage 1: The Builder (Node.js)
-FROM node:16-bookworm AS builder
+# --------------------------------------------------------
+# STAGE 1: THE BUILDER
+# --------------------------------------------------------
+# THE MAGIC: We force this stage to ALWAYS run on the Robot's native CPU 
+# (AMD64), even if we are building the final image for Apple Silicon.
+# This makes 'npm run build' run at 100% speed.
+FROM --platform=$BUILDPLATFORM node:16-bookworm AS builder
 WORKDIR /app
 COPY package.json yarn.lock ./
 # Install dependencies
