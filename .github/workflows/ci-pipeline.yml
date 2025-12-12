@@ -59,20 +59,25 @@ jobs:
         run: docker compose down
 
       # ----------------------------------------------------------------
-      # NEW STEP: Free up disk space on the runner
-      # This deletes ~20GB of unnecessary tools to prevent "No space left"
+      # NEW STEP: Manual Disk Cleanup (Robust & Plugin-Free)
+      # We delete large pre-installed tools we don't need.
       # ----------------------------------------------------------------
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space-action@v1.3.1
-        with:
-          # We don't need large android libraries or dotnet tools
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false # Don't delete docker, we need it!
-          swap-storage: false
+      - name: Free Disk Space (Manual)
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          
+          # Delete large directories
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/share/swift
+          
+          # Clean docker
+          docker system prune -af
+          
+          echo "Disk space after cleanup:"
+          df -h
 
       # ----------------------------------------------------------------
       # PART 2: DEPLOYMENT (The "Universal Delivery")
