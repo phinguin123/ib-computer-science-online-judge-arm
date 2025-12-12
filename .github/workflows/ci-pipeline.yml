@@ -59,6 +59,22 @@ jobs:
         run: docker compose down
 
       # ----------------------------------------------------------------
+      # NEW STEP: Free up disk space on the runner
+      # This deletes ~20GB of unnecessary tools to prevent "No space left"
+      # ----------------------------------------------------------------
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space-action@v1.3.1
+        with:
+          # We don't need large android libraries or dotnet tools
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false # Don't delete docker, we need it!
+          swap-storage: false
+
+      # ----------------------------------------------------------------
       # PART 2: DEPLOYMENT (The "Universal Delivery")
       # We use 'buildx' to build for BOTH Intel and Apple Silicon
       # ----------------------------------------------------------------
